@@ -27,8 +27,8 @@ export function TopBar() {
     },
     {
       name: "Alta de Biblioteca",
-      href: "/library",
-      current: location.pathname === "/library",
+      href: "/add-library",
+      current: location.pathname === "/add-library",
     },
   ];
 

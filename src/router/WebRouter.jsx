@@ -22,7 +22,7 @@ export function WebRouter() {
         path="/request-record"
         element={loadLayout(MainLayout, RequestRecord)}
       />
-      <Route path="/library" element={loadLayout(MainLayout, AddLibrary)} />
+      <Route path="/add-library" element={loadLayout(MainLayout, AddLibrary)} />
       <Route path="/signin" element={loadLayout(MainLayout, Login)} />
     </Routes>
   );
