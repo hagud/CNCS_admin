@@ -1,7 +1,7 @@
 import * as Yup from "yup";
 
 export const initialValues = () => {
-    return { code: "" }
+    return { code: "", parent: null, parentName: "" }
 }
 
 export const validationSchema = () => {

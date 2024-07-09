@@ -1,34 +1,46 @@
 import React, { useEffect, useState } from "react";
 import AddLibraryForm from "../../components/Web/AddLibrary/AddLibraryForm";
-import { CITY, BRANCHES_TYPE } from "../../api";
-
-const cityController = new CITY();
-const branchesTypeController = new BRANCHES_TYPE();
+import {
+  cityController,
+  branchesTypeController,
+  stateController,
+  communityController,
+  fundsTypeController,
+  softwareController,
+} from "../../api";
 
 export function AddLibrary() {
   const [cities, setCities] = useState([]);
   const [branchesType, setBranchesType] = useState([]);
+  const [states, setStates] = useState([]);
+  const [communities, setCommunities] = useState([]);
+  const [fundsType, setFundsType] = useState([]);
+  const [softwares, setSoftwares] = useState([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const data = await cityController.getAllCities(1, 999, "");
-        setCities(data.docs);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await branchesTypeController.getAllBranchesType(
-          1,
-          999,
-          ""
-        );
-        setBranchesType(data.docs);
+        const [
+          cities,
+          branchesType,
+          states,
+          communities,
+          fundsType,
+          softwares,
+        ] = await Promise.all([
+          cityController.getAllCities(1, 999, ""),
+          branchesTypeController.getAllBranchesType(1, 999, ""),
+          stateController.getAllStates(1, 999, ""),
+          communityController.getAllCommunities(1, 999, ""),
+          fundsTypeController.getAllFundsType(1, 999, ""),
+          softwareController.getAllSoftwares(1, 999, ""),
+        ]);
+        setCities(cities.docs);
+        setBranchesType(branchesType.docs);
+        setStates(states.docs);
+        setCommunities(communities.docs);
+        setFundsType(fundsType.docs);
+        setSoftwares(softwares.docs);
       } catch (error) {
         console.error(error);
       }
@@ -36,8 +48,8 @@ export function AddLibrary() {
   }, []);
 
   return (
-    <div>
-      <AddLibraryForm cities={cities} branchesType={branchesType} />
-    </div>
+    <AddLibraryForm
+      data={{ cities, branchesType, states, communities, fundsType, softwares }}
+    />
   );
 }

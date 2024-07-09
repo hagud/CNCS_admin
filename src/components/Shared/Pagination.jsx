@@ -36,7 +36,7 @@ export function Pagination(props) {
             <span className="font-medium">{pagination.pagingCounter}</span> de{" "}
             <span className="font-medium">
               {pagination.hasNextPage
-                ? pagination.page * 20
+                ? pagination.page * pagination.limit
                 : pagination.totalDocs}
             </span>{" "}
             de <span className="font-medium">{pagination.totalDocs}</span>{" "}
