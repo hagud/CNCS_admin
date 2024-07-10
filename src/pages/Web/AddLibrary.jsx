@@ -7,6 +7,7 @@ import {
   communityController,
   fundsTypeController,
   softwareController,
+  roleController,
 } from "../../api";
 
 export function AddLibrary() {
@@ -16,6 +17,7 @@ export function AddLibrary() {
   const [communities, setCommunities] = useState([]);
   const [fundsType, setFundsType] = useState([]);
   const [softwares, setSoftwares] = useState([]);
+  const [roles, setRoles] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -27,6 +29,7 @@ export function AddLibrary() {
           communities,
           fundsType,
           softwares,
+          roles,
         ] = await Promise.all([
           cityController.getAllCities(1, 999, ""),
           branchesTypeController.getAllBranchesType(1, 999, ""),
@@ -34,6 +37,7 @@ export function AddLibrary() {
           communityController.getAllCommunities(1, 999, ""),
           fundsTypeController.getAllFundsType(1, 999, ""),
           softwareController.getAllSoftwares(1, 999, ""),
+          roleController.getAllRoles(1, 999, ""),
         ]);
         setCities(cities.docs);
         setBranchesType(branchesType.docs);
@@ -41,6 +45,7 @@ export function AddLibrary() {
         setCommunities(communities.docs);
         setFundsType(fundsType.docs);
         setSoftwares(softwares.docs);
+        setRoles(roles.docs);
       } catch (error) {
         console.error(error);
       }
@@ -49,7 +54,15 @@ export function AddLibrary() {
 
   return (
     <AddLibraryForm
-      data={{ cities, branchesType, states, communities, fundsType, softwares }}
+      data={{
+        cities,
+        branchesType,
+        states,
+        communities,
+        fundsType,
+        softwares,
+        roles,
+      }}
     />
   );
 }

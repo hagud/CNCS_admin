@@ -9,4 +9,5 @@ export const ENV = {
     STATE: "/state",
     COMMUNITY: "/community",
     SOFTWARE: "/software",
+    ROLE: "/role",
 }
