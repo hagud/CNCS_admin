@@ -1,7 +1,12 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { MainLayout } from "../layouts";
-import { SearchLibrary, AddLibrary, RequestRecord } from "../pages/Web";
+import {
+  SearchLibrary,
+  AddLibrary,
+  RequestRecord,
+  Library,
+} from "../pages/Web";
 import { Error } from "../pages/Error";
 import { Login } from "../pages/Auth";
 
@@ -23,6 +28,7 @@ export function WebRouter() {
         element={loadLayout(MainLayout, RequestRecord)}
       />
       <Route path="/add-library" element={loadLayout(MainLayout, AddLibrary)} />
+      <Route path="/library/:id" element={loadLayout(MainLayout, Library)} />
       <Route path="/signin" element={loadLayout(MainLayout, Login)} />
     </Routes>
   );

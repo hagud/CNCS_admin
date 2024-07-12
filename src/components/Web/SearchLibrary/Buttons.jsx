@@ -2,13 +2,15 @@ import React, { useState } from "react";
 import { TrashIcon, EyeIcon } from "@heroicons/react/24/solid";
 import { Confirm } from "../../Shared";
 
-export function ViewRecord({ record }) {
+export function ViewBranch({ branch }) {
   return (
-    <a href={`/template/${record}`} rel="noreferrer">
-      <EyeIcon
-        className="h-8 w-8 border text-gray-600 border-gray-200 hover:bg-gray-100 p-1 rounded-md"
-        title="Ver"
-      />
+    <a
+      href={`/library/${branch.id}`}
+      rel="noreferrer"
+      className="flex justify-center items-center p-2 gap-2 bg-zinc-700 text-white rounded-full hover:bg-zinc-600"
+    >
+      <EyeIcon className="h-[18px] w-[18px]" title="Ver" />
+      <p className="font-bold">{branch.code}</p>
     </a>
   );
 }

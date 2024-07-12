@@ -10,4 +10,5 @@ export const ENV = {
     COMMUNITY: "/community",
     SOFTWARE: "/software",
     ROLE: "/role",
+    USER: "/user",
 }

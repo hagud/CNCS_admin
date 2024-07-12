@@ -7,6 +7,7 @@ import {
   BuildingOffice2Icon,
   CheckCircleIcon,
   ClipboardDocumentListIcon,
+  CommandLineIcon,
   DevicePhoneMobileIcon,
   FolderArrowDownIcon,
   IdentificationIcon,
@@ -21,13 +22,14 @@ import {
   UserPlusIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
-import { branchController } from "../../../api";
+import { branchController, userController } from "../../../api";
 import { useDebouncedCallback } from "use-debounce";
 import { useFormik } from "formik";
 import { initialValues, validationSchema } from "./AddLibraryForm.form";
-import { map } from "lodash";
+import { forEach, map } from "lodash";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Bounce, toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 const WAIT_BEETWEEN_REQUEST = 500;
 
@@ -47,6 +49,7 @@ export default function AddLibraryForm(props) {
   const [branches, setBranches] = useState([]);
   const [usersCount, setUsersCount] = useState(0);
   const recaptcha = useRef();
+  const navigate = useNavigate();
 
   const addUser = () => {
     setUsersCount((prevState) => prevState + 1);
@@ -59,12 +62,51 @@ export default function AddLibraryForm(props) {
     initialValues: initialValues(),
     validationSchema: validationSchema(),
     validateOnChange: false,
-    onSubmit: (values) => {
+    onSubmit: async (values) => {
       const captchaValue = recaptcha.current.getValue();
       if (!captchaValue) {
-        console.log("Captcha is required");
+        toast.error("reCaptcha obligatorio", {
+          position: "top-center",
+          transition: Bounce,
+          autoClose: 5000,
+        });
       } else {
-        console.log(values);
+        if (validCode === false) {
+          toast.error("Codigo invalido", {
+            position: "top-center",
+            transition: Bounce,
+            autoClose: 5000,
+          });
+        } else {
+          try {
+            const branch = await branchController.createBranch(values);
+            if (branch.status === 200) {
+              if (values.users.length > 0) {
+                forEach(values.users, async (user) => {
+                  await userController.createUser({
+                    ...user,
+                    branch: branch.data.id,
+                  });
+                });
+              }
+              toast.success(branch.message, {
+                position: "top-center",
+                transition: Bounce,
+                autoClose: 5000,
+              });
+              formik.resetForm();
+              navigate("/");
+            } else {
+              toast.error(branch.message, {
+                position: "top-center",
+                transition: Bounce,
+                autoClose: 5000,
+              });
+            }
+          } catch (error) {
+            console.error("[POST] create branch and users error:", error);
+          }
+        }
       }
     },
   });
@@ -80,17 +122,21 @@ export default function AddLibraryForm(props) {
   }, [formik.errors]);
 
   const handlerValidateCode = useDebouncedCallback(async (e) => {
-    if (e.target.value.length > 2) {
-      const checked = await branchController.checkCode(e.target.value);
-      setValidCode(checked);
-      if (checked) {
-        formik.setFieldValue("code", e.target.value);
+    try {
+      if (e.target.value.length > 2) {
+        const checked = await branchController.checkCode(e.target.value);
+        setValidCode(checked);
+      } else {
+        setValidCode(false);
       }
+    } catch (error) {
+      console.error("[POST] check code error:", error);
     }
   }, WAIT_BEETWEEN_REQUEST);
 
   const handlerSearchBranch = useDebouncedCallback(async (e) => {
     formik.setFieldValue("parent", null);
+    formik.setFieldValue("isParent", true);
     if (e.target.value.length > 2) {
       const branches = await branchController.getAllBranches(
         1,
@@ -100,6 +146,7 @@ export default function AddLibraryForm(props) {
       setBranches(branches.docs);
     } else {
       setBranches([]);
+      formik.setFieldValue("isParent", true);
     }
   }, WAIT_BEETWEEN_REQUEST);
 
@@ -133,6 +180,8 @@ export default function AddLibraryForm(props) {
                       id="name"
                       name="name"
                       type="text"
+                      value={formik.values.name}
+                      onChange={formik.handleChange}
                       required
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
@@ -153,7 +202,11 @@ export default function AddLibraryForm(props) {
                       name="code"
                       type="text"
                       required
-                      onChange={handlerValidateCode}
+                      value={formik.values.code}
+                      onChange={(e) => {
+                        formik.setFieldValue("code", e.target.value);
+                        handlerValidateCode(e);
+                      }}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
                     {validCode ? (
@@ -166,20 +219,21 @@ export default function AddLibraryForm(props) {
 
                 <div className="sm:col-span-2">
                   <label
-                    htmlFor="branches_type_id"
+                    htmlFor="branch_type_id"
                     className="block text-sm font-medium leading-6 text-zinc-900"
                   >
                     <span className="text-red-700">*</span> Tipo de biblioteca
                   </label>
                   <div className="relative mt-2">
                     <select
-                      id="branches_type_id"
-                      name="branches_type_id"
+                      id="branch_type_id"
+                      name="branch_type_id"
                       required
-                      defaultValue=""
+                      defaultValue={formik.values.branch_type_id || 0}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
-                      <option value="" disabled>
+                      <option value={0} disabled>
                         Selecciona un tipo de biblioteca
                       </option>
                       {map(branchesType, (branchType) => (
@@ -221,6 +275,7 @@ export default function AddLibraryForm(props) {
                           key={branch.id}
                           onClick={() => {
                             formik.setFieldValue("parent", branch.id);
+                            formik.setFieldValue("isParent", false);
                             formik.setFieldValue("parentName", branch.name);
                           }}
                         >
@@ -246,10 +301,11 @@ export default function AddLibraryForm(props) {
                     <select
                       id="funds_type_id"
                       name="funds_type_id"
-                      defaultValue=""
+                      defaultValue={formik.values.funds_type_id || 0}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
-                      <option value="" disabled>
+                      <option value={0} disabled>
                         Selecciona un tipo de fondos
                       </option>
                       {map(fundsType, (funds) => (
@@ -273,6 +329,8 @@ export default function AddLibraryForm(props) {
                     <input
                       id="category"
                       name="category"
+                      value={formik.values.category}
+                      onChange={formik.handleChange}
                       type="text"
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
@@ -297,6 +355,8 @@ export default function AddLibraryForm(props) {
                       name="phone"
                       type="tel"
                       required
+                      value={formik.values.phone}
+                      onChange={formik.handleChange}
                       autoComplete="tel"
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
@@ -316,6 +376,8 @@ export default function AddLibraryForm(props) {
                       id="fax"
                       name="fax"
                       type="tel"
+                      value={formik.values.fax}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
                     <PrinterIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
@@ -334,6 +396,8 @@ export default function AddLibraryForm(props) {
                       id="email"
                       name="email"
                       type="email"
+                      value={formik.values.email}
+                      onChange={formik.handleChange}
                       required
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
@@ -353,6 +417,8 @@ export default function AddLibraryForm(props) {
                       id="address"
                       name="address"
                       type="text"
+                      value={formik.values.address}
+                      onChange={formik.handleChange}
                       autoComplete="street-address"
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
@@ -371,7 +437,9 @@ export default function AddLibraryForm(props) {
                     <input
                       id="zip"
                       name="zip"
-                      type="number"
+                      type="text"
+                      value={formik.values.zip}
+                      onChange={formik.handleChange}
                       autoComplete="postal-code"
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
@@ -392,10 +460,11 @@ export default function AddLibraryForm(props) {
                       name="city"
                       required
                       autoComplete="city-name"
-                      defaultValue=""
+                      defaultValue={formik.values.city || 0}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
-                      <option value="" disabled>
+                      <option value={0} disabled>
                         Selecciona una ciudad
                       </option>
                       {map(cities, (city) => (
@@ -420,10 +489,11 @@ export default function AddLibraryForm(props) {
                       id="state"
                       name="state"
                       autoComplete="state-name"
-                      defaultValue=""
+                      defaultValue={formik.values.state || 0}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
-                      <option value="" disabled>
+                      <option value={0} disabled>
                         Selecciona una provincia
                       </option>
                       {map(states, (state) => (
@@ -449,10 +519,11 @@ export default function AddLibraryForm(props) {
                       name="community"
                       required
                       autoComplete="community-name"
-                      defaultValue=""
+                      defaultValue={formik.values.community || 0}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
-                      <option value="" disabled>
+                      <option value={0} disabled>
                         Selecciona una comunidad autónoma
                       </option>
                       {map(communities, (community) => (
@@ -477,6 +548,8 @@ export default function AddLibraryForm(props) {
                       id="base_url"
                       name="base_url"
                       type="text"
+                      value={formik.values.base_url}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
                     <LinkIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
@@ -495,6 +568,8 @@ export default function AddLibraryForm(props) {
                       id="catalog_url"
                       name="catalog_url"
                       type="text"
+                      value={formik.values.catalog_url}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
                     <LinkIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
@@ -512,7 +587,8 @@ export default function AddLibraryForm(props) {
                     <select
                       id="loan_center"
                       name="loan_center"
-                      defaultValue={true}
+                      defaultValue={formik.values.loan_center}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
                       <option value={true}>Si</option>
@@ -533,7 +609,8 @@ export default function AddLibraryForm(props) {
                     <select
                       id="loan_service"
                       name="loan_service"
-                      defaultValue={true}
+                      value={formik.values.loan_service}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
                       <option value={true}>Si</option>
@@ -554,6 +631,8 @@ export default function AddLibraryForm(props) {
                       id="loan_rate"
                       name="loan_rate"
                       type="number"
+                      value={formik.values.loan_rate}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
                     <BanknotesIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
@@ -571,6 +650,8 @@ export default function AddLibraryForm(props) {
                       id="limit_service"
                       name="limit_service"
                       type="number"
+                      value={formik.values.limit_service}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     />
                     <FolderArrowDownIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
@@ -587,10 +668,11 @@ export default function AddLibraryForm(props) {
                     <select
                       id="software_id"
                       name="software_id"
-                      defaultValue=""
+                      defaultValue={formik.values.software_id || 0}
+                      onChange={formik.handleChange}
                       className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                     >
-                      <option value="" disabled>
+                      <option value={0} disabled>
                         Selecciona un software
                       </option>
                       {map(softwares, (software) => (
@@ -599,7 +681,7 @@ export default function AddLibraryForm(props) {
                         </option>
                       ))}
                     </select>
-                    <MapIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
+                    <CommandLineIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
                   </div>
                   <span className="text-xs text-zinc-500">
                     * Si dispone de un sistema de gestión de préstamo
@@ -629,20 +711,21 @@ export default function AddLibraryForm(props) {
                 >
                   <div className="sm:col-span-2">
                     <label
-                      htmlFor={`role${index}`}
+                      htmlFor={`users[${index}].role`}
                       className="block text-sm font-medium leading-6 text-zinc-900"
                     >
                       Area
                     </label>
                     <div className="relative mt-2">
                       <select
-                        id={`role${index}`}
-                        name={`role${index}`}
+                        id={`users[${index}].role`}
+                        name={`users[${index}].role`}
                         required
-                        defaultValue=""
+                        defaultValue={formik.values.users[index]?.role || 0}
+                        onChange={formik.handleChange}
                         className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                       >
-                        <option value="" disabled>
+                        <option value={0} disabled>
                           Selecciona un area
                         </option>
                         {map(roles, (role) => {
@@ -663,15 +746,17 @@ export default function AddLibraryForm(props) {
                   </div>
                   <div className="sm:col-span-2">
                     <label
-                      htmlFor={`name${index}`}
+                      htmlFor={`users[${index}].name`}
                       className="block text-sm font-medium leading-6 text-zinc-900"
                     >
                       Nombre
                     </label>
                     <div className="relative mt-2">
                       <input
-                        id={`name${index}`}
-                        name={`name${index}`}
+                        id={`users[${index}].name`}
+                        name={`users[${index}].name`}
+                        value={formik.values.users[index]?.name || ""}
+                        onChange={formik.handleChange}
                         type="text"
                         required
                         className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
@@ -681,15 +766,17 @@ export default function AddLibraryForm(props) {
                   </div>
                   <div className="sm:col-span-2">
                     <label
-                      htmlFor={`phone${index}`}
+                      htmlFor={`users[${index}].phone`}
                       className="block text-sm font-medium leading-6 text-zinc-900"
                     >
                       Telefono
                     </label>
                     <div className="relative mt-2">
                       <input
-                        id={`phone${index}`}
-                        name={`phone${index}`}
+                        id={`users[${index}].phone`}
+                        name={`users[${index}].phone`}
+                        value={formik.values.users[index]?.phone || ""}
+                        onChange={formik.handleChange}
                         required
                         type="tel"
                         className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
@@ -699,17 +786,19 @@ export default function AddLibraryForm(props) {
                   </div>
                   <div className="sm:col-span-2">
                     <label
-                      htmlFor={`email${index}`}
+                      htmlFor={`users[${index}].email`}
                       className="block text-sm font-medium leading-6 text-zinc-900"
                     >
                       Correo electronico
                     </label>
                     <div className="relative mt-2">
                       <input
-                        id={`email${index}`}
-                        name={`email${index}`}
+                        id={`users[${index}].email`}
+                        name={`users[${index}].email`}
+                        value={formik.values.users[index]?.email || ""}
+                        onChange={formik.handleChange}
                         required
-                        type="tel"
+                        type="email"
                         className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
                       />
                       <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
@@ -743,9 +832,8 @@ export default function AddLibraryForm(props) {
               sitekey={process.env.REACT_APP_CAPTCHAKEY}
             />
             <button
-              className="rounded-md text-white bg-zinc-700 p-2 disabled:opacity-50"
+              className="rounded-md text-white bg-zinc-700 p-2"
               type="submit"
-              disabled={!Object.keys(formik.errors).length > 0}
             >
               Enviar solicitud
             </button>

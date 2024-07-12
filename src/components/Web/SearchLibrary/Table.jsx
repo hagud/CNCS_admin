@@ -1,9 +1,10 @@
 import React from "react";
 import { Pagination, Search } from "../../Shared";
 import { size } from "lodash";
+import { ViewBranch } from "./Buttons";
 
 export function Table(props) {
-  const { libraries, pagination, query } = props;
+  const { branches, pagination, query } = props;
 
   return (
     <div className="w-full">
@@ -16,36 +17,36 @@ export function Table(props) {
                 <Search query={query} placeholder={"Buscar bibliotecas..."} />
               </div>
             </div>
-            {size(libraries) > 0 ? (
+            {size(branches) > 0 ? (
               <>
                 <div className="md:hidden">
-                  {libraries?.map((library) => (
+                  {branches?.map((branch) => (
                     <div
-                      key={library.id}
+                      key={branch.id}
                       className="mb-2 w-full rounded-md bg-white py-2 p-4"
                     >
                       <div className="flex items-center justify-between border-b gap-4 pb-4">
                         <div className="flex justify-center items-center">
                           <a
-                            href={`https://euit.orex.es/cgi-bin/koha/opac-detail.pl?biblionumber=${library.id}`}
+                            href={`https://euit.orex.es/cgi-bin/koha/opac-detail.pl?biblionumber=${branch.id}`}
                             target="_blank"
                             rel="noreferrer"
                             className="font-bold underline text-zinc-700"
                           >
-                            {library.id}
+                            {branch.id}
                           </a>
                         </div>
 
                         <div className="flex flex-col justify-center items-start w-full">
                           <p className="text-sm font-semibold text-zinc-900 line-clamp-1 max-w-sm">
-                            {library.name}
+                            {branch.name}
                           </p>
                         </div>
                       </div>
                       <div className="flex w-full items-center justify-between pt-4">
                         <div className="flex flex-col justify-center">
                           <p className="text-sm text-zinc-900 capitalize">
-                            {library.code}
+                            {branch.code}
                           </p>
                         </div>
                         <div className="flex justify-center items-center gap-4"></div>
@@ -56,44 +57,92 @@ export function Table(props) {
                 <table className="hidden rounded-md text-zinc-900 md:table">
                   <thead className="rounded-md bg-zinc-50 text-left text-sm font-normal">
                     <tr>
-                      <th scope="col" className="px-4 py-2 font-medium sm:pl-6">
-                        ID
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Codigo
                       </th>
-                      <th scope="col" className="px-3 py-2 font-medium">
-                        Titulo / Autores
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Nombre
                       </th>
-                      <th scope="col" className="px-3 py-2 font-medium">
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Software
+                      </th>
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Ciudad
+                      </th>
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Provincia
+                      </th>
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Comunidad autonoma
+                      </th>
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
                         Tipo
                       </th>
-                      <th scope="col" className="px-3 py-2 font-medium">
-                        Acciones
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Institucion de la que depende
+                      </th>
+                      <th
+                        scope="col"
+                        className="p-2 text-xs font-medium uppercase"
+                      >
+                        Especialidad
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-200 text-zinc-900">
-                    {libraries?.map((library) => (
-                      <tr key={library.id} className="group">
-                        <td className="h-14 whitespace-nowrap bg-white px-4 text-sm py-4">
-                          <a
-                            href={`https://euit.orex.es/cgi-bin/koha/opac-detail.pl?biblionumber=${library.id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="font-bold underline text-zinc-700"
-                          >
-                            {library.id}
-                          </a>
+                    {branches?.map((branch) => (
+                      <tr key={branch.id} className="group">
+                        <td className="whitespace-nowrap bg-white p-2">
+                          <ViewBranch branch={branch} />
                         </td>
-                        <td className="whitespace-nowrap bg-white px-4 text-sm">
-                          <p className="text-sm font-semibold text-zinc-900 line-clamp-2 max-w-lg">
-                            {library.name}
-                          </p>
+                        <td className="whitespace-nowrap bg-white text-xs font-bold capitalize p-2">
+                          {branch.name}
                         </td>
-                        <td className="whitespace-nowrap bg-white px-4  text-sm">
-                          <p className="text-sm  text-zinc-900 capitalize">
-                            {library.code}
-                          </p>
+                        <td className="whitespace-nowrap bg-white text-xs capitalize p-2">
+                          {branch.softawares?.name || "No"}
                         </td>
-                        <td className="flex h-14 justify-center items-center gap-4 whitespace-nowrap bg-white px-4 cursor-pointer"></td>
+                        <td className="whitespace-nowrap bg-white text-xs capitalize p-2">
+                          {branch.cities?.name}
+                        </td>
+                        <td className="whitespace-nowrap bg-white text-xs capitalize p-2">
+                          {branch.states?.name}
+                        </td>
+                        <td className="whitespace-nowrap bg-white text-xs capitalize p-2">
+                          {branch.communities?.name}
+                        </td>
+                        <td className="whitespace-nowrap bg-white text-xs capitalize p-2">
+                          {branch.branches_type?.name}
+                        </td>
+                        <td className="whitespace-nowrap bg-white text-xs capitalize p-2">
+                          {branch.branches?.name}
+                        </td>
+                        <td className="whitespace-nowrap bg-white text-xs capitalize p-2">
+                          {branch.category}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -106,7 +155,7 @@ export function Table(props) {
                 </p>
               </div>
             )}
-            {/* <Pagination pagination={pagination} /> */}
+            <Pagination pagination={pagination} />
           </div>
         </div>
       </div>
