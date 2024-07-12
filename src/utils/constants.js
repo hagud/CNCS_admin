@@ -1,4 +1,4 @@
-const BASE_API_URL = "http://localhost:4000";
+const BASE_API_URL = !process.env.REACT_APP_TYPE ? process.env.REACT_APP_BASE_API_URL_DEV : process.env.REACT_APP_BASE_API_URL;
 
 export const ENV = {
     BASE_API_URL,
