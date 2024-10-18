@@ -8,7 +8,6 @@ export const initialValues = () => {
         parent: null,
         isParent: true,
         parentName: "",
-        funds_type_id: null,
         category: "",
         phone: "",
         fax: "",

@@ -1,49 +1,28 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import {
-  AtSymbolIcon,
-  BanknotesIcon,
-  BuildingLibraryIcon,
-  BuildingOffice2Icon,
-  CheckCircleIcon,
-  ClipboardDocumentListIcon,
-  CommandLineIcon,
-  DevicePhoneMobileIcon,
-  FolderArrowDownIcon,
-  IdentificationIcon,
-  KeyIcon,
-  LinkIcon,
-  MapIcon,
-  MapPinIcon,
-  PrinterIcon,
-  ShareIcon,
-  TagIcon,
-  UserMinusIcon,
-  UserPlusIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
 import { branchController, userController } from "../../../api";
 import { useDebouncedCallback } from "use-debounce";
 import { useFormik } from "formik";
 import { initialValues, validationSchema } from "./AddLibraryForm.form";
-import { forEach, map } from "lodash";
+import { filter, forEach, map } from "lodash";
 import ReCAPTCHA from "react-google-recaptcha";
 import { Bounce, toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  Form,
+  Grid,
+  Icon,
+  Input,
+  List,
+  Select,
+  Tab,
+} from "semantic-ui-react";
 
 const WAIT_BEETWEEN_REQUEST = 500;
 
 export default function AddLibraryForm(props) {
   const {
-    data: {
-      cities,
-      branchesType,
-      states,
-      communities,
-      fundsType,
-      softwares,
-      roles,
-    },
+    data: { cities, branchesType, states, communities, softwares, roles },
   } = props;
   const [validCode, setValidCode] = useState(false);
   const [branches, setBranches] = useState([]);
@@ -121,10 +100,10 @@ export default function AddLibraryForm(props) {
     );
   }, [formik.errors]);
 
-  const handlerValidateCode = useDebouncedCallback(async (e) => {
+  const handlerValidateCode = useDebouncedCallback(async (value) => {
     try {
-      if (e.target.value.length > 2) {
-        const checked = await branchController.checkCode(e.target.value);
+      if (value.length > 2) {
+        const checked = await branchController.checkCode(value);
         setValidCode(checked);
       } else {
         setValidCode(false);
@@ -150,128 +129,93 @@ export default function AddLibraryForm(props) {
     }
   }, WAIT_BEETWEEN_REQUEST);
 
-  return (
-    <form onSubmit={formik.handleSubmit}>
-      <TabGroup>
-        <TabList className="flex justify-center items-center gap-4">
-          <Tab className="rounded-full p-2 data-[selected]:bg-zinc-700 data-[selected]:text-white data-[hover]:opacity-50">
-            Biblioteca
-          </Tab>
-          <Tab className="rounded-full p-2 data-[selected]:bg-zinc-700 data-[selected]:text-white data-[hover]:opacity-50">
-            Responsables
-          </Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel>
-            <div>
-              <h2 className="text-base font-semibold leading-7 text-zinc-900">
-                Información de la Biblioteca
-              </h2>
-              <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    <span className="text-red-700">*</span> Nombre de biblioteca
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      value={formik.values.name}
-                      onChange={formik.handleChange}
-                      required
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <BuildingLibraryIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="code"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    <span className="text-red-700">*</span> Codigo de biblioteca
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="code"
-                      name="code"
-                      type="text"
-                      required
-                      value={formik.values.code}
-                      onChange={(e) => {
-                        formik.setFieldValue("code", e.target.value);
-                        handlerValidateCode(e);
-                      }}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    {validCode ? (
-                      <CheckCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-green-500" />
-                    ) : (
-                      <XCircleIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-red-500" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="branch_type_id"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    <span className="text-red-700">*</span> Tipo de biblioteca
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="branch_type_id"
-                      name="branch_type_id"
-                      required
-                      defaultValue={formik.values.branch_type_id || 0}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={0} disabled>
-                        Selecciona un tipo de biblioteca
-                      </option>
-                      {map(branchesType, (branchType) => (
-                        <option key={branchType.id} value={branchType.id}>
-                          {branchType.name}
-                        </option>
-                      ))}
-                    </select>
-                    <TagIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="relative sm:col-span-2">
-                  <label
-                    htmlFor="parentName"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
+  const panes = [
+    {
+      menuItem: { key: "libraries", content: "Biblioteca", icon: "building" },
+      render: () => (
+        <Tab.Pane>
+          <h2 className="text-xl font-semibold text-zinc-900 mb-4">
+            Información de la Biblioteca
+          </h2>
+          <Grid>
+            <Grid.Row columns={2}>
+              <Grid.Column>
+                <Form.Field required>
+                  <label htmlFor="name">Nombre completo</label>
+                  <Input
+                    type="text"
+                    name="name"
+                    id="name"
+                    value={formik.values.name}
+                    onChange={formik.handleChange}
+                    icon={"user"}
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field required>
+                  <label htmlFor="code">Codigo de biblioteca</label>
+                  <Input
+                    type="text"
+                    name="code"
+                    id="code"
+                    value={formik.values.code}
+                    onChange={(e) => {
+                      formik.handleChange(e);
+                      handlerValidateCode(e.target.value);
+                    }}
+                    icon={validCode ? "check" : "cancel"}
+                  />
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns={3}>
+              <Grid.Column>
+                <Form.Field required>
+                  <label htmlFor="branch_type_id">Tipo de biblioteca</label>
+                  <Select
+                    name="branch_type_id"
+                    id="branch_type_id"
+                    placeholder="Seleccione un tipo de biblioteca"
+                    value={formik.values.branch_type_id}
+                    onChange={(e) =>
+                      formik.setFieldValue("branch_type_id", e.target.value)
+                    }
+                    options={map(branchesType, (branchType) => ({
+                      key: branchType.id,
+                      value: branchType.id,
+                      text: branchType.name,
+                    }))}
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="parentName">
                     Institución de la que depende
                   </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="parentName"
-                      name="parentName"
-                      type="text"
-                      onChange={(e) => {
-                        formik.setFieldValue("parentName", e.target.value);
-                        handlerSearchBranch(e);
-                      }}
-                      value={formik.values.parentName}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <BuildingOffice2Icon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
+                  <Input
+                    type="text"
+                    name="parentName"
+                    id="parentName"
+                    value={formik.values.parentName}
+                    onChange={(e) => {
+                      formik.handleChange(e);
+                      handlerSearchBranch(e);
+                    }}
+                    loading={branches.length > 0 && !formik.values.parent}
+                    className="relative"
+                    icon={"building"}
+                  />
                   {branches.length > 0 && !formik.values.parent && (
-                    <ul className="absolute mt-2 w-full after:hidden">
+                    <List
+                      divided
+                      verticalAlign="middle"
+                      className="absolute after:hidden bg-white border border-zinc-200 top-14 w-[92.75%] rounded"
+                    >
                       {map(branches, (branch) => (
-                        <li
-                          className="cursor-pointer hover:bg-zinc-100 border-b border-zinc-200 px-2 bg-white"
+                        <List.Item
+                          className="cursor-pointer hover:bg-zinc-100"
                           key={branch.id}
                           onClick={() => {
                             formik.setFieldValue("parent", branch.id);
@@ -279,567 +223,432 @@ export default function AddLibraryForm(props) {
                             formik.setFieldValue("parentName", branch.name);
                           }}
                         >
-                          {branch.name}
-                        </li>
+                          <p className="p-2">{branch.name}</p>
+                        </List.Item>
                       ))}
-                    </ul>
+                    </List>
                   )}
-                  <span className="text-xs text-zinc-500">
-                    * Si no depende de ninguna institucion no complete este
-                    campo.
-                  </span>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="funds_type_id"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Tipo de fondos
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="funds_type_id"
-                      name="funds_type_id"
-                      defaultValue={formik.values.funds_type_id || 0}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={0} disabled>
-                        Selecciona un tipo de fondos
-                      </option>
-                      {map(fundsType, (funds) => (
-                        <option key={funds.id} value={funds.id}>
-                          {funds.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ClipboardDocumentListIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Especialidad
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="category"
-                      name="category"
-                      value={formik.values.category}
-                      onChange={formik.handleChange}
-                      type="text"
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <TagIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="category">Especialidad</label>
+                  <Input
+                    type="text"
+                    name="category"
+                    id="category"
+                    value={formik.values.category}
+                    onChange={(e) => {
+                      formik.setFieldValue("category", e.target.value);
+                      handlerValidateCode(e);
+                    }}
+                    icon="tag"
+                  />
                   <span className="text-xs text-zinc-500">
                     * Si desea añadir más de una especialidad, separela con una
-                    coma.
+                    ','
                   </span>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="phone"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    <span className="text-red-700">*</span> Telefono
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      required
-                      value={formik.values.phone}
-                      onChange={formik.handleChange}
-                      autoComplete="tel"
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <DevicePhoneMobileIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="fax"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Fax
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="fax"
-                      name="fax"
-                      type="tel"
-                      value={formik.values.fax}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <PrinterIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="email"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    <span className="text-red-700">*</span> Correo electronico
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formik.values.email}
-                      onChange={formik.handleChange}
-                      required
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-4">
-                  <label
-                    htmlFor="address"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Dirección postal
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="address"
-                      name="address"
-                      type="text"
-                      value={formik.values.address}
-                      onChange={formik.handleChange}
-                      autoComplete="street-address"
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <MapPinIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="zip"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Codigo postal
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="zip"
-                      name="zip"
-                      type="text"
-                      value={formik.values.zip}
-                      onChange={formik.handleChange}
-                      autoComplete="postal-code"
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <MapPinIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="city"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    <span className="text-red-700">*</span> Ciudad
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="city"
-                      name="city"
-                      required
-                      autoComplete="city-name"
-                      defaultValue={formik.values.city || 0}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={0} disabled>
-                        Selecciona una ciudad
-                      </option>
-                      {map(cities, (city) => (
-                        <option key={city.id} value={city.id}>
-                          {city.name}
-                        </option>
-                      ))}
-                    </select>
-                    <MapIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="state"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Provincia
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="state"
-                      name="state"
-                      autoComplete="state-name"
-                      defaultValue={formik.values.state || 0}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={0} disabled>
-                        Selecciona una provincia
-                      </option>
-                      {map(states, (state) => (
-                        <option key={state.id} value={state.id}>
-                          {state.name}
-                        </option>
-                      ))}
-                    </select>
-                    <MapIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="community"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    <span className="text-red-700">*</span> Comunidad Autónoma
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="community"
-                      name="community"
-                      required
-                      autoComplete="community-name"
-                      defaultValue={formik.values.community || 0}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={0} disabled>
-                        Selecciona una comunidad autónoma
-                      </option>
-                      {map(communities, (community) => (
-                        <option key={community.id} value={community.id}>
-                          {community.name}
-                        </option>
-                      ))}
-                    </select>
-                    <MapIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label
-                    htmlFor="base_url"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns={3}>
+              <Grid.Column>
+                <Form.Field required>
+                  <label htmlFor="phone">Telefono</label>
+                  <Input
+                    type="tel"
+                    name="phone"
+                    id="phone"
+                    value={formik.values.phone}
+                    onChange={formik.handleChange}
+                    icon="phone"
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="fax">Fax</label>
+                  <Input
+                    type="tel"
+                    name="fax"
+                    id="fax"
+                    value={formik.values.fax}
+                    onChange={formik.handleChange}
+                    icon="print"
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field required>
+                  <label htmlFor="email">Correo electronico</label>
+                  <Input
+                    type="email"
+                    name="email"
+                    id="email"
+                    value={formik.values.email}
+                    onChange={formik.handleChange}
+                    icon="at"
+                    autoComplete="email"
+                  />
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns={2}>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="address">Dirección postal</label>
+                  <Input
+                    type="text"
+                    name="address"
+                    id="address"
+                    value={formik.values.address}
+                    onChange={formik.handleChange}
+                    icon="map marker"
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="zip">Codigo postal</label>
+                  <Input
+                    type="text"
+                    name="zip"
+                    id="zip"
+                    value={formik.values.zip}
+                    onChange={formik.handleChange}
+                    icon="map pin"
+                  />
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns={3}>
+              <Grid.Column>
+                <Form.Field required>
+                  <label htmlFor="city">Ciudad</label>
+                  <Select
+                    name="city"
+                    id="city"
+                    placeholder="Seleccione una ciudad"
+                    value={formik.values.city}
+                    onChange={(e) =>
+                      formik.setFieldValue("city", e.target.value)
+                    }
+                    options={map(cities, (city) => ({
+                      key: city.id,
+                      value: city.id,
+                      text: city.name,
+                    }))}
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="state">Provincia</label>
+                  <Select
+                    name="state"
+                    id="state"
+                    placeholder="Seleccione una provincia"
+                    value={formik.values.state}
+                    onChange={(e) =>
+                      formik.setFieldValue("state", e.target.value)
+                    }
+                    options={map(states, (state) => ({
+                      key: state.id,
+                      value: state.id,
+                      text: state.name,
+                    }))}
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field required>
+                  <label htmlFor="community">Comunidad Autónoma</label>
+                  <Select
+                    name="community"
+                    id="community"
+                    placeholder="Seleccione una comunidad autónoma"
+                    value={formik.values.community}
+                    onChange={(e) =>
+                      formik.setFieldValue("community", e.target.value)
+                    }
+                    options={map(communities, (community) => ({
+                      key: community.id,
+                      value: community.id,
+                      text: community.name,
+                    }))}
+                  />
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns={2}>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="base_url">
                     URL página web de la biblioteca
                   </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="base_url"
-                      name="base_url"
-                      type="text"
-                      value={formik.values.base_url}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <LinkIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-3">
-                  <label
-                    htmlFor="catalog_url"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
+                  <Input
+                    type="text"
+                    name="base_url"
+                    id="base_url"
+                    value={formik.values.base_url}
+                    onChange={formik.handleChange}
+                    icon="linkify"
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="catalog_url">
                     URL página web del catálogo de la biblioteca
                   </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="catalog_url"
-                      name="catalog_url"
-                      type="text"
-                      value={formik.values.catalog_url}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <LinkIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-1">
-                  <label
-                    htmlFor="loan_center"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Servicio PIB
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="loan_center"
-                      name="loan_center"
-                      defaultValue={formik.values.loan_center}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={true}>Si</option>
-                      <option value={false}>No</option>
-                    </select>
-                    <ShareIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-
-                <div className="sm:col-span-1">
-                  <label
-                    htmlFor="loan_service"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
+                  <Input
+                    type="text"
+                    name="catalog_url"
+                    id="catalog_url"
+                    value={formik.values.catalog_url}
+                    onChange={formik.handleChange}
+                    icon="linkify"
+                  />
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row columns={4}>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="loan_center">Servicio PIB</label>
+                  <Select
+                    type="text"
+                    name="loan_center"
+                    id="loan_center"
+                    placeholder="Seleccione un servicio"
+                    value={formik.values.loan_center}
+                    onChange={(e) =>
+                      formik.setFieldValue("loan_center", e.target.value)
+                    }
+                    options={[
+                      {
+                        key: 1,
+                        value: true,
+                        text: "Si",
+                      },
+                      {
+                        key: 0,
+                        value: false,
+                        text: "No",
+                      },
+                    ]}
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="loan_service">
                     Servicio PIB centralizado
                   </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="loan_service"
-                      name="loan_service"
-                      value={formik.values.loan_service}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={true}>Si</option>
-                      <option value={false}>No</option>
-                    </select>
-                    <ShareIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="loan_rate"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Tarifa préstamo
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="loan_rate"
-                      name="loan_rate"
-                      type="number"
-                      value={formik.values.loan_rate}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <BanknotesIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-                <div className="sm:col-span-2">
-                  <label
-                    htmlFor="limit_service"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Limitación servicio
-                  </label>
-                  <div className="relative mt-2">
-                    <input
-                      id="limit_service"
-                      name="limit_service"
-                      type="number"
-                      value={formik.values.limit_service}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    />
-                    <FolderArrowDownIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
-                </div>
-                <div className="sm:col-span-6">
-                  <label
-                    htmlFor="software_id"
-                    className="block text-sm font-medium leading-6 text-zinc-900"
-                  >
-                    Software
-                  </label>
-                  <div className="relative mt-2">
-                    <select
-                      id="software_id"
-                      name="software_id"
-                      defaultValue={formik.values.software_id || 0}
-                      onChange={formik.handleChange}
-                      className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                    >
-                      <option value={0} disabled>
-                        Selecciona un software
-                      </option>
-                      {map(softwares, (software) => (
-                        <option key={software.id} value={software.id}>
-                          {software.name}
-                        </option>
-                      ))}
-                    </select>
-                    <CommandLineIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                  </div>
+                  <Select
+                    type="text"
+                    name="loan_service"
+                    id="loan_service"
+                    placeholder="Seleccione un servicio"
+                    value={formik.values.loan_service}
+                    onChange={(e) =>
+                      formik.setFieldValue("loan_service", e.target.value)
+                    }
+                    options={[
+                      {
+                        key: 1,
+                        value: true,
+                        text: "Si",
+                      },
+                      {
+                        key: 0,
+                        value: false,
+                        text: "No",
+                      },
+                    ]}
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="loan_rate">Tarifa préstamo</label>
+                  <Input
+                    type="number"
+                    name="loan_rate"
+                    id="loan_rate"
+                    value={formik.values.loan_rate}
+                    onChange={formik.handleChange}
+                    icon="money"
+                  />
+                </Form.Field>
+              </Grid.Column>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="limit_service">Limitación servicio</label>
+                  <Input
+                    type="number"
+                    name="limit_service"
+                    id="limit_service"
+                    value={formik.values.limit_service}
+                    onChange={formik.handleChange}
+                    icon="folder arrow down"
+                  />
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+            <Grid.Row>
+              <Grid.Column>
+                <Form.Field>
+                  <label htmlFor="software_id">Software</label>
+                  <Select
+                    type="text"
+                    name="software_id"
+                    id="software_id"
+                    placeholder="Seleccione un software"
+                    value={formik.values.software_id}
+                    onChange={(e) =>
+                      formik.setFieldValue("software_id", e.target.value)
+                    }
+                    options={map(softwares, (software) => ({
+                      key: software.id,
+                      value: software.id,
+                      text: software.name,
+                    }))}
+                  />
                   <span className="text-xs text-zinc-500">
                     * Si dispone de un sistema de gestión de préstamo
                     interbibliotecario (GTBIB, ILL) debe introducir la siguiente
                     información para poder realizar la petición de documentos.
                   </span>
-                </div>
-              </div>
+                </Form.Field>
+              </Grid.Column>
+            </Grid.Row>
+          </Grid>
+        </Tab.Pane>
+      ),
+    },
+    {
+      menuItem: { key: "users", content: "Responsables", icon: "users" },
+      icon: "users",
+      render: () => (
+        <Tab.Pane>
+          <h2 className="text-xl font-semibold text-zinc-900 mb-4">
+            Información del personal de la Biblioteca
+          </h2>
+          {usersCount === 0 && (
+            <div className="flex justify-center items-center mt-4">
+              <p className="text-zinc-500">
+                Agregar personal para tu biblioteca.
+              </p>
             </div>
-          </TabPanel>
-          <TabPanel>
-            <div>
-              <h2 className="text-base font-semibold leading-7 text-zinc-900">
-                Información del personal de la Biblioteca
-              </h2>
-              {usersCount === 0 && (
-                <div className="flex justify-center items-center mt-4">
-                  <p className="text-zinc-500">
-                    Agregar personal para tu biblioteca.
-                  </p>
-                </div>
-              )}
-              {map(Array(usersCount), (_, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-8 mt-4"
-                >
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor={`users[${index}].role`}
-                      className="block text-sm font-medium leading-6 text-zinc-900"
-                    >
-                      Area
-                    </label>
-                    <div className="relative mt-2">
-                      <select
-                        id={`users[${index}].role`}
-                        name={`users[${index}].role`}
-                        required
-                        defaultValue={formik.values.users[index]?.role || 0}
-                        onChange={formik.handleChange}
-                        className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[12px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                      >
-                        <option value={0} disabled>
-                          Selecciona un area
-                        </option>
-                        {map(roles, (role) => {
-                          if (
-                            role.name === "Biblioteca" ||
-                            role.name === "Responsable"
-                          ) {
-                            return (
-                              <option key={role.id} value={role.id}>
-                                {role.name}
-                              </option>
-                            );
-                          }
-                        })}
-                      </select>
-                      <KeyIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor={`users[${index}].name`}
-                      className="block text-sm font-medium leading-6 text-zinc-900"
-                    >
-                      Nombre
-                    </label>
-                    <div className="relative mt-2">
-                      <input
-                        id={`users[${index}].name`}
-                        name={`users[${index}].name`}
-                        value={formik.values.users[index]?.name || ""}
-                        onChange={formik.handleChange}
-                        type="text"
-                        required
-                        className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                      />
-                      <IdentificationIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor={`users[${index}].phone`}
-                      className="block text-sm font-medium leading-6 text-zinc-900"
-                    >
-                      Telefono
-                    </label>
-                    <div className="relative mt-2">
-                      <input
-                        id={`users[${index}].phone`}
-                        name={`users[${index}].phone`}
-                        value={formik.values.users[index]?.phone || ""}
-                        onChange={formik.handleChange}
-                        required
-                        type="tel"
-                        className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                      />
-                      <DevicePhoneMobileIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                    </div>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor={`users[${index}].email`}
-                      className="block text-sm font-medium leading-6 text-zinc-900"
-                    >
+          )}
+          {map(Array(usersCount), (_, index) => (
+            <Grid>
+              <Grid.Row columns={4}>
+                <Grid.Column>
+                  <Form.Field>
+                    <label htmlFor={`users[${index}].role`}>Area</label>
+                    <Select
+                      type="text"
+                      name={`users[${index}].role`}
+                      id={`users[${index}].role`}
+                      placeholder="Seleccione un area"
+                      value={formik.values.users[index]?.role}
+                      onChange={(e) =>
+                        formik.setFieldValue(
+                          `users[${index}].role`,
+                          e.target.value
+                        )
+                      }
+                      options={filter(
+                        roles,
+                        (role) =>
+                          role.name === "Biblioteca" ||
+                          role.name === "Responsable"
+                      ).map((role) => ({
+                        key: role.id,
+                        value: role.id,
+                        text: role.name,
+                      }))}
+                    />
+                  </Form.Field>
+                </Grid.Column>
+                <Grid.Column>
+                  <Form.Field>
+                    <label htmlFor={`users[${index}].name`}>Nombre</label>
+                    <Input
+                      type="text"
+                      name={`users[${index}].name`}
+                      id={`users[${index}].name`}
+                      value={formik.values.users[index]?.name}
+                      onChange={formik.handleChange}
+                      icon="user"
+                    />
+                  </Form.Field>
+                </Grid.Column>
+                <Grid.Column>
+                  <Form.Field>
+                    <label htmlFor={`users[${index}].phone`}>Telefono</label>
+                    <Input
+                      type="tel"
+                      name={`users[${index}].phone`}
+                      id={`users[${index}].phone`}
+                      value={formik.values.users[index]?.phone}
+                      onChange={formik.handleChange}
+                      icon="phone"
+                    />
+                  </Form.Field>
+                </Grid.Column>
+                <Grid.Column>
+                  <Form.Field>
+                    <label htmlFor={`users[${index}].email`}>
                       Correo electronico
                     </label>
-                    <div className="relative mt-2">
-                      <input
-                        id={`users[${index}].email`}
-                        name={`users[${index}].email`}
-                        value={formik.values.users[index]?.email || ""}
-                        onChange={formik.handleChange}
-                        required
-                        type="email"
-                        className="peer block w-full rounded-md border-0 text-zinc-900 ring-1 ring-inset ring-zinc-300 py-[9px] pl-10 text-sm outline-2 placeholder:text-zinc-400 focus:ring-2 focus:ring-inset focus:ring-zinc-700 sm:text-sm sm:leading-6"
-                      />
-                      <AtSymbolIcon className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500 peer-focus:text-zinc-900" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-              <div className="flex justify-center items-center gap-4 mt-4">
-                {usersCount >= 1 && (
-                  <button
-                    className="flex justify-center items-center rounded-md text-white bg-red-700 p-2 gap-1"
-                    onClick={removeUser}
-                  >
-                    <UserMinusIcon className="h-5 w-5" />
-                    Borrar
-                  </button>
-                )}
-                <button
-                  className="flex justify-center items-center rounded-md text-white bg-zinc-700 p-2 gap-1"
-                  onClick={addUser}
-                >
-                  <UserPlusIcon className="h-5 w-5" />
-                  Agregar
-                </button>
-              </div>
-            </div>
-          </TabPanel>
-          <div className="flex flex-col justify-center items-center mt-4 gap-4">
-            <ReCAPTCHA
-              ref={recaptcha}
-              sitekey={process.env.REACT_APP_CAPTCHAKEY}
-            />
-            <button
-              className="rounded-md text-white bg-zinc-700 p-2"
-              type="submit"
-            >
-              Enviar solicitud
-            </button>
+                    <Input
+                      type="email"
+                      name={`users[${index}].email`}
+                      id={`users[${index}].email`}
+                      value={formik.values.users[index]?.email}
+                      onChange={formik.handleChange}
+                      icon="at"
+                    />
+                  </Form.Field>
+                </Grid.Column>
+              </Grid.Row>
+            </Grid>
+          ))}
+          <div className="flex justify-center items-center gap-4 mt-6">
+            {usersCount >= 1 && (
+              <Button type="button" onClick={removeUser}>
+                <Icon name="delete user" />
+                Borrar
+              </Button>
+            )}
+            <Button type="button" onClick={addUser}>
+              <Icon name="add user" />
+              Agregar
+            </Button>
           </div>
-        </TabPanels>
-      </TabGroup>
-    </form>
+        </Tab.Pane>
+      ),
+    },
+  ];
+
+  return (
+    <div className="flex flex-col m-4 gap-4">
+      <h2 className="text-2xl font-semibold text-zinc-900">
+        Solicitud de alta de la biblioteca
+      </h2>
+      <Form
+        className="flex flex-col gap-4 justify-center items-center"
+        onSubmit={formik.handleSubmit}
+      >
+        <Tab panes={panes} className="w-full" />
+        <ReCAPTCHA ref={recaptcha} sitekey={process.env.REACT_APP_CAPTCHAKEY} />
+        <Button className="rounded-md text-white bg-zinc-700 p-2" type="submit">
+          Enviar solicitud
+        </Button>
+      </Form>
+    </div>
   );
 }

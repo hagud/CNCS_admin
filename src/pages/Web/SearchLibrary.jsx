@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Table } from "../../components/Web/SearchLibrary";
+import { TableLibrary } from "../../components/Web/SearchLibrary";
 import { branchController } from "../../api";
 import { useSearchParams } from "react-router-dom";
 
 export function SearchLibrary() {
   const [branches, setBranches] = useState([]);
-  const [pagination, setPagination] = useState({});
   const [searchParams] = useSearchParams();
 
   const page = searchParams.get("page") || 1;
@@ -20,9 +19,7 @@ export function SearchLibrary() {
           limit,
           query
         );
-        setBranches(response.docs);
-        delete response.docs;
-        setPagination(response);
+        setBranches(response);
       } catch (error) {
         console.error(error);
       }
@@ -31,7 +28,7 @@ export function SearchLibrary() {
 
   return (
     <div>
-      <Table branches={branches} pagination={pagination} query={""} />
+      <TableLibrary branches={branches} query={query} />
     </div>
   );
 }
